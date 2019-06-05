@@ -47,5 +47,56 @@ ram_memory      #(
   .q_o       ( data      )
 );
 
+mem_cntr #(
+  .AWIDTH ( AWIDTH )
+) writer (
+  .clk_i         ( clk_i       ),
+  .srst_i        ( srst_i      ), 
+  
+  .wren_i    ( wren    ), 
+  .fsm_clr_i ( fsm_clr ),
+  
+  .wraddr_o ( wrpntr )
+);
+
+fsm #(
+  .AWIDTH ( AWIDTH )
+) fsmachine (
+  .clk_i         ( clk_i       ),
+  .srst_i        ( srst_i      ), 
+  
+  .wren_i    ( wren    ), 
+  .sort_done_i ( sort_done ),
+  .cntr_i ( wrpntr ),
+  
+  .busy_o ( busy_o ),
+  .sort_op_o ( fsm_sort_op ),
+  .output_op_o ( fsm_output_op ),
+  .clear_op_o ( fsm_clr ),
+  .val_o ( val_o ),
+  .sop_o ( sop_o ),
+  .eop_o ( eop_o )
+  
+);
+
+sorter #(
+  .DWIDTH ( DWIDTH ),
+  .AWIDTH ( AWIDTH )
+) srt_outp_module (
+  .clk_i         ( clk_i       ),
+  .srst_i        ( srst_i      ), 
+  
+  .wren_i    ( wren    ), 
+  .sort_op_i ( fsm_sort_op ),
+  .output_op_i ( fsm_output_op ),
+  .clear_op_i ( fsm_clr ),
+  
+  .cntr_i ( wrpntr ),
+  .data_i ( data ),
+  
+  .rdaddr_o ( rdpntr ),
+  .sort_done_o ( sort_done ),
+  .data_o ( data_o )
+);
 
 endmodule
