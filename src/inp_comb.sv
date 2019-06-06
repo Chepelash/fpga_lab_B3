@@ -11,7 +11,7 @@ module inp_comb (
 
 logic wren;
 
-assign wren_o = val_i & wren;
+assign wren_o = val_i;// & wren;
 
 always_ff @( posedge clk_i )
   begin

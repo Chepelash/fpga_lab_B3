@@ -4,6 +4,8 @@ module fsm #(
   input                     clk_i,
   input                     srst_i, 
   
+  input                     eop_i,
+  input                     val_i,
   input                     wren_i,
   input                     sort_done_i,
   input        [AWIDTH-1:0] cntr_i,
@@ -22,7 +24,8 @@ module fsm #(
 logic wren;
 logic wren_temp;
 
-assign wren = wren_temp & ( ~wren_i );
+//assign wren = wren_temp & ( ~wren_i );
+assign wren = val_i & eop_i;
 
 always_ff @( posedge clk_i )
   begin
@@ -30,27 +33,32 @@ always_ff @( posedge clk_i )
       wren_temp <= '0;
     else
       wren_temp <= wren_i;
+//      wren <= val_i & eop_i;
   end
 
-logic [AWIDTH-1:0] int_cntr;
-always_ff @( posedge clk_i )
-  begin
-    if( srst_i )
-      int_cntr <= '0;
-    else if( wren )
-      int_cntr <= cntr_i;
-    else if( state == OUTPUT_S )
-      int_cntr <= int_cntr - 1'b1;
-    else
-      int_cntr <= int_cntr;
-      
-  end
+
 
 // FSM states
 enum logic [1:0] {IDLE_S,
                   SORT_S,
                   OUTPUT_S} state, next_state;
 
+                  
+                  
+logic [AWIDTH-1:0] int_cntr;
+always_ff @( posedge clk_i )
+  begin
+    if( srst_i )
+      int_cntr <= '0;
+//    else if( wren )
+    else if( eop_i )
+      int_cntr <= cntr_i - 1'b1;
+    else if( state == OUTPUT_S )
+      int_cntr <= int_cntr - 1'b1;
+    else
+      int_cntr <= int_cntr;
+      
+  end
 // FSM blocks
 always_ff @( posedge clk_i )
   begin
@@ -66,7 +74,8 @@ always_comb
     next_state = state;
     case( state )
       IDLE_S: begin
-        next_state = wren ? SORT_S : IDLE_S;
+//        next_state = wren ? SORT_S : IDLE_S;
+        next_state = eop_i ? SORT_S : IDLE_S;
       end
       
       SORT_S: begin
@@ -123,7 +132,7 @@ always_ff @( posedge clk_i )
             sort_op_o   <= '0;
             output_op_o <= '1;
             // flag control here !!!!!!
-            if( int_cntr == cntr_i )
+            if( int_cntr == cntr_i - 1'b1 )
               begin
                 val_o      <= '1;
                 sop_o      <= '1;

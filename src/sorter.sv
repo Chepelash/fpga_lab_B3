@@ -24,7 +24,12 @@ module sorter #(
   - writing into registers;
   - sorting.
 */
-
+logic [DWIDTH-1:0] data_array [2**AWIDTH-1:0];
+logic              writing_done; // end of writing operation
+logic [AWIDTH-1:0] intr_cntr;
+logic [AWIDTH-1:0] i;
+logic [AWIDTH-1:0] j;
+logic output_done;
 // writing
 // grab intr_cntr on the falling edge of wren_i ??
 logic wren;
@@ -45,8 +50,10 @@ always_ff @( posedge clk_i )
   begin
     if( srst_i )
       begin
+        data_o <= '0;
         intr_cntr <= '0;
         writing_done <= '0;
+        output_done <= '0;
         sort_done_o <= '0;
         data_array <= '{default: '0};
         i <= '0;
@@ -63,17 +70,24 @@ always_ff @( posedge clk_i )
         */
         if( clear_op_i )
           begin
+            data_o <= '0;
             intr_cntr    <= '0;
             writing_done <= '0;
             data_array   <= '{default: '0};
             sort_done_o <= '0;
+            output_done <= '0;
             i <= '0;
             j <= '0;
           end
-        else if( output_op_i ) // output
+        //else if( output_op_i ) // output
+        else if( sort_done_o && !output_done ) // output
           begin            
             data_o <= data_array[intr_cntr];
-            intr_cntr <= intr_cntr - 1'b1;
+            if( intr_cntr == 0 )
+              output_done <= '1;
+            else
+              intr_cntr <= intr_cntr - 1'b1;              
+            
           end
         else if( writing_done && !sort_done_o ) // sorting
           begin
@@ -97,21 +111,30 @@ always_ff @( posedge clk_i )
                   end
                 // sorting
                  if( data_array[j] < data_array[j+1] )
-                  begin
+                   begin
                     data_array[j] <= data_array[j+1];
                     data_array[j+1] <= data_array[j];
-                  end
+                   end
+                 else
+                   begin
+                     data_array[j] <= data_array[j];
+                     data_array[j+1] <= data_array[j+1];
+                   end
+                    
                
               end
           end
         else if( sort_op_i && !writing_done ) // writing
 
             begin
-              intr_cntr <= intr_cntr + 1'b1;
-              if( intr_cntr == cntr_i )            
+              
+              if( intr_cntr == cntr_i - 1'b1 )            
                 writing_done <= '1;              
               else
-                writing_done <= '0;
+                begin
+                  writing_done <= '0;
+                  intr_cntr <= intr_cntr + 1'b1;
+                end
                 
               data_array[intr_cntr] <= data_i;
             end
@@ -124,11 +147,7 @@ always_ff @( posedge clk_i )
 
 
 // writing into registers
-logic [DWIDTH-1:0] data_array [AWIDTH-1:0];
-logic              writing_done; // end of writing operation
-logic [AWIDTH-1:0] intr_cntr;
-logic [AWIDTH-1:0] i;
-logic [AWIDTH-1:0] j;
+
 
 
 assign rdaddr_o = intr_cntr;

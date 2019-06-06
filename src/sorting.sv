@@ -74,6 +74,8 @@ fsm #(
   .clk_i         ( clk_i       ),
   .srst_i        ( srst_i      ), 
   
+  .eop_i ( eop_i ),
+  .val_i ( val_i ),
   .wren_i    ( wren    ), 
   .sort_done_i ( sort_done ),
   .cntr_i ( wrpntr ),
