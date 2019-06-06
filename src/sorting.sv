@@ -18,66 +18,59 @@ module sorting #(
   output logic              busy_o //
 );
 
-
-logic wren;
 logic [AWIDTH-1:0] wrpntr;
 logic [AWIDTH-1:0] rdpntr;
 logic [DWIDTH-1:0] data;
-logic fsm_clr;
-logic sort_done;
-logic fsm_sort_op;
-logic fsm_output_op;
-logic clr;
+logic              clr;
 
-ram_memory      #(
-  .DWIDTH        ( DWIDTH      ),
-  .AWIDTH        ( AWIDTH      )
-) ram_mem        (
-  .clk_i         ( clk_i       ),
-  .srst_i        ( srst_i      ), 
+ram_memory #(
+  .DWIDTH   ( DWIDTH ),
+  .AWIDTH   ( AWIDTH )
+) ram_mem   (
+  .clk_i    ( clk_i  ),
+  .srst_i   ( srst_i ), 
   
-  .wren_i    ( val_i    ), 
-  .wrpntr_i  ( wrpntr  ),
-  .data_i    ( data_i      ),
+  .wren_i   ( val_i  ), 
+  .wrpntr_i ( wrpntr ),
+  .data_i   ( data_i ),
   
   .rdpntr_i ( rdpntr ),
   
-  .q_o       ( data      )
+  .q_o      ( data   )
 );
 
-mem_ctrl #(
-  .AWIDTH ( AWIDTH )
-) writer (
-  .clk_i         ( clk_i       ),
-  .srst_i        ( srst_i      ), 
+mem_ctrl   #(
+  .AWIDTH   ( AWIDTH )
+) writer    (
+  .clk_i    ( clk_i  ),
+  .srst_i   ( srst_i ), 
   
-  .val_i    ( val_i    ), 
-  .eop_i ( eop_i ),
-  .clr_i ( eop_o ),
+  .val_i    ( val_i  ), 
+  .eop_i    ( eop_i  ),
+  .clr_i    ( eop_o  ),
   
-  .busy_o ( busy_o ),
+  .busy_o   ( busy_o ),
   .wraddr_o ( wrpntr )
 );
 
 
-sorter #(
-  .DWIDTH ( DWIDTH ),
-  .AWIDTH ( AWIDTH )
+sorter           #(
+  .DWIDTH         ( DWIDTH ),
+  .AWIDTH         ( AWIDTH )
 ) srt_outp_module (
-  .clk_i         ( clk_i       ),
-  .srst_i        ( srst_i      ), 
+  .clk_i          ( clk_i  ),
+  .srst_i         ( srst_i ), 
   
-  .wren_i    ( busy_o    ), 
+  .wren_i         ( busy_o ), 
   
-  .cntr_i ( wrpntr ),
-  .data_i ( data ),
+  .cntr_i         ( wrpntr ),
+  .data_i         ( data   ),
   
-  .rdaddr_o ( rdpntr ),
-  .rst_o ( clr ),  
-  .data_o ( data_o ),
-  .sop_o ( sop_o ),
-  .eop_o ( eop_o ),
-  .val_o ( val_o )
+  .rdaddr_o       ( rdpntr ),  
+  .data_o         ( data_o ),
+  .sop_o          ( sop_o  ),
+  .eop_o          ( eop_o  ),
+  .val_o          ( val_o  )
 );
 
 endmodule
