@@ -19,6 +19,15 @@ module sorting #(
 );
 
 
+logic wren;
+logic [AWIDTH-1:0] wrpntr;
+logic [AWIDTH-1:0] rdpntr;
+logic [DWIDTH-1:0] data;
+logic fsm_clr;
+logic sort_done;
+logic fsm_sort_op;
+logic fsm_output_op;
+
 inp_comb
   inp_comb_1  (
   .clk_i      ( clk_i    ),
@@ -47,7 +56,7 @@ ram_memory      #(
   .q_o       ( data      )
 );
 
-mem_cntr #(
+mem_ctrl #(
   .AWIDTH ( AWIDTH )
 ) writer (
   .clk_i         ( clk_i       ),
