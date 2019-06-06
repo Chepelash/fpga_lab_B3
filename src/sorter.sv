@@ -6,16 +6,15 @@ module sorter #(
   input                     srst_i, 
   
   input                     wren_i,
-  input                     sort_op_i,
-  input                     output_op_i,
-  input                     clear_op_i,
-  
   input        [AWIDTH-1:0] cntr_i,
   input        [DWIDTH-1:0] data_i,
   
   output logic [AWIDTH-1:0] rdaddr_o,
-  output logic              sort_done_o,
-  output logic [DWIDTH-1:0] data_o
+  output logic              rst_o,
+  output logic [DWIDTH-1:0] data_o,
+  output logic              sop_o,
+  output logic              eop_o,
+  output logic              val_o
 );
 
 
@@ -30,20 +29,25 @@ logic [AWIDTH-1:0] intr_cntr;
 logic [AWIDTH-1:0] i;
 logic [AWIDTH-1:0] j;
 logic output_done;
+logic sort_done;
 // writing
-// grab intr_cntr on the falling edge of wren_i ??
+
 logic wren;
-logic wren_temp;
-
-assign wren = wren_temp & ( ~wren_i );
-
-always_ff @( posedge clk_i )
-  begin
-    if( srst_i )
-      wren_temp <= '0;
-    else
-      wren_temp <= wren_i;
-  end
+assign wren = wren_i;
+//always_ff @( posedge clk_i ) 
+//  begin
+//    if( srst_i )
+//      wren <= '0;
+//    else
+//      begin
+//        if( rst_o )
+//          wren <= '0;
+//        else if( wren_i )
+//          wren <= '1;
+//        else
+//          wren <= wren;
+//      end
+//  end
 
 // data_array operations
 always_ff @( posedge clk_i )
@@ -54,10 +58,14 @@ always_ff @( posedge clk_i )
         intr_cntr <= '0;
         writing_done <= '0;
         output_done <= '0;
-        sort_done_o <= '0;
+        sort_done <= '0;
         data_array <= '{default: '0};
         i <= '0;
         j <= '0;
+        rst_o <= '0;
+        val_o <= '0;
+        eop_o <= '0;
+        sop_o <= '0;
       end      
     else
       begin : main_else
@@ -68,37 +76,64 @@ always_ff @( posedge clk_i )
         - sorting;
         - writing.
         */
-        if( clear_op_i )
+        if( eop_o )
           begin
+            rst_o <= '0;
+            val_o <= '0;
+            eop_o <= '0;
+            sop_o <= '0;
             data_o <= '0;
             intr_cntr    <= '0;
             writing_done <= '0;
             data_array   <= '{default: '0};
-            sort_done_o <= '0;
+            sort_done <= '0;
             output_done <= '0;
             i <= '0;
             j <= '0;
           end
         //else if( output_op_i ) // output
-        else if( sort_done_o && !output_done ) // output
+        else if( sort_done ) // output
           begin            
             data_o <= data_array[intr_cntr];
-            if( intr_cntr == 0 )
-              output_done <= '1;
+            intr_cntr <= intr_cntr - 1'b1;     
+            if( intr_cntr == cntr_i - 1'b1 )
+              begin
+                val_o <= 1'b1;
+                sop_o <= 1'b1;
+                eop_o <= 1'b0;
+              end              
+            else if( intr_cntr == '0 )
+              begin                
+                val_o <= '1;
+                sop_o <= '0;
+                eop_o <= '1;
+              end
+            else if( intr_cntr == 0 )
+              begin
+                rst_o <= '1;
+                val_o <= '0;
+                sop_o <= '0;
+                eop_o <= '0;
+              end              
             else
-              intr_cntr <= intr_cntr - 1'b1;              
+              begin
+                val_o <= '1;
+                eop_o <= '0;
+                sop_o <= '0;
+              end
+                       
             
           end
-        else if( writing_done && !sort_done_o ) // sorting
+        else if( writing_done && !sort_done ) // sorting
           begin
             if( i == cntr_i - 1'b1 ) // sorting done
               begin
-                sort_done_o <= '1;
+                sort_done <= '1;
               end
             else
               begin                
               // iterattors
-               sort_done_o <= '0;
+               sort_done <= '0;
                 if( j == cntr_i - 1'b1 )
                   begin
                     j <= '0;
@@ -115,16 +150,16 @@ always_ff @( posedge clk_i )
                     data_array[j] <= data_array[j+1];
                     data_array[j+1] <= data_array[j];
                    end
-                 else
-                   begin
-                     data_array[j] <= data_array[j];
-                     data_array[j+1] <= data_array[j+1];
-                   end
+//                 else
+//                   begin
+//                     data_array[j] <= data_array[j];
+//                     data_array[j+1] <= data_array[j+1];
+//                   end
                     
                
               end
           end
-        else if( sort_op_i && !writing_done ) // writing
+        else if( wren_i && !writing_done ) // writing
 
             begin
               

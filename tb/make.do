@@ -29,10 +29,8 @@ add wave /sorting_tb/busy_o
 add wave /sorting_tb/DUT/wren
 add wave /sorting_tb/DUT/wrpntr
 add wave /sorting_tb/DUT/rdpntr
-add wave /sorting_tb/DUT/fsm_sort_op
-add wave /sorting_tb/DUT/fsm_output_op
-add wave /sorting_tb/DUT/fsm_clr
 add wave -radix hex /sorting_tb/DUT/srt_outp_module/data_array
+add wave -radix hex /sorting_tb/DUT/srt_outp_module/wren
 
 
 run -all

@@ -27,18 +27,7 @@ logic fsm_clr;
 logic sort_done;
 logic fsm_sort_op;
 logic fsm_output_op;
-
-inp_comb
-  inp_comb_1  (
-  .clk_i      ( clk_i    ),
-  .srst_i     ( srst_i   ),
-  
-  .sop_i      ( sop_i    ),
-  .eop_i      ( eop_i    ),
-  .val_i      ( val_i    ),
-  
-  .wren_o ( wren )
-);
+logic clr;
 
 ram_memory      #(
   .DWIDTH        ( DWIDTH      ),
@@ -47,7 +36,7 @@ ram_memory      #(
   .clk_i         ( clk_i       ),
   .srst_i        ( srst_i      ), 
   
-  .wren_i    ( wren    ), 
+  .wren_i    ( val_i    ), 
   .wrpntr_i  ( wrpntr  ),
   .data_i    ( data_i      ),
   
@@ -62,33 +51,14 @@ mem_ctrl #(
   .clk_i         ( clk_i       ),
   .srst_i        ( srst_i      ), 
   
-  .wren_i    ( wren    ), 
-  .fsm_clr_i ( fsm_clr ),
+  .val_i    ( val_i    ), 
+  .eop_i ( eop_i ),
+  .clr_i ( eop_o ),
   
+  .busy_o ( busy_o ),
   .wraddr_o ( wrpntr )
 );
 
-fsm #(
-  .AWIDTH ( AWIDTH )
-) fsmachine (
-  .clk_i         ( clk_i       ),
-  .srst_i        ( srst_i      ), 
-  
-  .eop_i ( eop_i ),
-  .val_i ( val_i ),
-  .wren_i    ( wren    ), 
-  .sort_done_i ( sort_done ),
-  .cntr_i ( wrpntr ),
-  
-  .busy_o ( busy_o ),
-  .sort_op_o ( fsm_sort_op ),
-  .output_op_o ( fsm_output_op ),
-  .clear_op_o ( fsm_clr ),
-  .val_o ( val_o ),
-  .sop_o ( sop_o ),
-  .eop_o ( eop_o )
-  
-);
 
 sorter #(
   .DWIDTH ( DWIDTH ),
@@ -97,17 +67,17 @@ sorter #(
   .clk_i         ( clk_i       ),
   .srst_i        ( srst_i      ), 
   
-  .wren_i    ( wren    ), 
-  .sort_op_i ( fsm_sort_op ),
-  .output_op_i ( fsm_output_op ),
-  .clear_op_i ( fsm_clr ),
+  .wren_i    ( busy_o    ), 
   
   .cntr_i ( wrpntr ),
   .data_i ( data ),
   
   .rdaddr_o ( rdpntr ),
-  .sort_done_o ( sort_done ),
-  .data_o ( data_o )
+  .rst_o ( clr ),  
+  .data_o ( data_o ),
+  .sop_o ( sop_o ),
+  .eop_o ( eop_o ),
+  .val_o ( val_o )
 );
 
 endmodule

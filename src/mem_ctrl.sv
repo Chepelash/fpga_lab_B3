@@ -4,9 +4,11 @@ module mem_ctrl #(
   input                     clk_i,
   input                     srst_i,
   
-  input                     wren_i,
-  input                     fsm_clr_i,
+  input                     val_i,
+  input                     eop_i,
+  input                     clr_i,
   
+  output logic              busy_o,
   output logic [AWIDTH-1:0] wraddr_o
 );
 
@@ -18,13 +20,31 @@ always_ff @( posedge clk_i )
       end   : reset
     else
       begin : workflow
-        if( fsm_clr_i )
+        if( clr_i )
           wraddr_o <= '0;
-        else if( wren_i )
+        else if( val_i )
           wraddr_o <= wraddr_o + 1'b1;
         else
           wraddr_o <= wraddr_o;
       end   : workflow
   end
 
+always_ff @( posedge clk_i )
+  begin
+    if( srst_i )
+      begin
+        busy_o <= '0;
+      end
+    else
+      begin
+        if( eop_i )
+          busy_o <= '1;
+        else if( clr_i )
+          busy_o <= '0;
+        else
+          busy_o <= busy_o;
+      end
+  end
+  
+  
 endmodule
