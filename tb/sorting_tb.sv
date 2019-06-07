@@ -169,11 +169,12 @@ task automatic sort_test;
   for( int j = 0; j < 100; j++ )
     begin
       
-      num_of_iter = $urandom_range(2**AWIDTH-1, 3);
+      num_of_iter = $urandom_range(2**AWIDTH, 3);
       random_write( num_of_iter );
       flag_control();
     end
- 
+  random_write( 2**AWIDTH );
+  flag_control();
   
 endtask
 
