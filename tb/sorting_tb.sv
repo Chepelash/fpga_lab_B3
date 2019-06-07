@@ -67,7 +67,7 @@ task automatic init;
   val_i  <= '0;
   sop_i  <= '0;
   eop_i  <= '0;
-
+  data_i <= '0;
 
 endtask
 
@@ -78,13 +78,7 @@ int queue[$];
 int num_of_iter;
 
 task automatic random_write( int num_of_iter );
-  int data_len;
-  
-  int cntr;
-  bit test_done;  
-  int sorted_queue[$];
-  
-  
+  queue = {};
   
   val_i <= '1;
   for( int i = 0; i < num_of_iter; i++ )
@@ -102,80 +96,7 @@ task automatic random_write( int num_of_iter );
     end
   val_i <= '0;
   eop_i <= '0;
-  
-//  data_len = queue.size();
-//  $display("data_len == %d", data_len);
-//  
-//  queue.sort();
-//  $display("%p", queue);
-//  while( !test_done )
-//    begin
-//      @( posedge clk_i );
-//      if( busy_o != '1 )
-//        begin
-//          $display("Fail! Expected busy_o!");
-//          $stop();
-//        end
-//      while( val_o == 1 )
-//        begin : val_o_1
-//          sorted_queue.push_back( data_o ); 
-//          $display("cntr = %d", cntr);
-//          if( busy_o != '1 )
-//            begin
-//              $display("Fail! Expected busy_o!");
-//              $stop();
-//            end
-//          if( cntr == 0 )
-//            begin : val_start  
-//              $display("cntr == 0");
-//              if( sop_o != '1 )
-//                begin
-//                  $display("Fail! Expected sop_o at start!");
-//                  $stop();
-//                end
-//              if( eop_o == '1 )
-//                begin
-//                  $display("Fail! Unxpected eop_o at start!");
-//                  $stop();
-//                end              
-//            end : val_start
-//          else if( cntr == data_len - 1 )
-//            begin : val_end
-//              test_done = 1;
-//              $display("cntr == data_len-1");
-//              if( sop_o == '1 )
-//                begin
-//                  $display("Fail! Unexpected sop_o at end!");
-//                  $stop();
-//                end             
-//              if( eop_o != '1 )
-//                begin
-//                  $display("Fail! Expected eop_o at end!");
-//                  $stop();
-//                end
-//            end   : val_end
-//            cntr = cntr + 1;
-//            @( posedge clk_i );
-//        end : val_o_1
-//        if( test_done )
-//          begin            
-//            $display("test_done");
-//            @( posedge clk_i );
-//            if( val_o == 1 || eop_o == 1 || sop_o == 1 || busy_o == 1 )
-//              begin
-//                $display("Fail! Unexpected flags at end!");
-//                $stop();
-//              end            
-//          end
-//    end
-//    
-//    if( queue != sorted_queue )
-//      begin
-//        $display("%p", sorted_queue);
-//        $display("Fail! Data was not sorted");
-//        $stop();
-//      end
-  
+  @( posedge clk_i );
 endtask
 
 task automatic flag_control;
@@ -186,93 +107,79 @@ task automatic flag_control;
   
   data_len  = queue.size();
   queue.sort();
-  $display("%p", queue);
-  while( !test_done )
-    begin
-      @( posedge clk_i );
-      if( busy_o != '1 )
-        begin
-          $display("Fail! Expected busy_o!");
-          $stop();
-        end
-      while( val_o == 1 )
-        begin : val_o_1
-          sorted_queue.push_back( data_o );
-          cntr = cntr + 1;
-          if( busy_o != '1 )
-            begin
-              $display("Fail! Expected busy_o!");
-              $stop();
-            end
+  
+  while( busy_o )
+    begin : while_loop
+      while( val_o )
+        begin : val_o
+
           if( cntr == 0 )
-            begin : val_start              
-              if( sop_o != '1 )
+            begin : cntr_0
+              if( sop_o != 1 )
                 begin
-                  $display("Fail! Expected sop_o at start!");
+                  $display("Fail! Expected sop_o!");
                   $stop();
                 end
-              if( eop_o == '1 )
+              if( eop_o == 1 )
                 begin
-                  $display("Fail! Unxpected eop_o at start!");
-                  $stop();
-                end              
-            end : val_start
-          else if( cntr == data_len )
-            begin : val_end
-              test_done = 1;
-              if( sop_o == '1 )
-                begin
-                  $display("Fail! Unexpected sop_o at end!");
-                  $stop();
-                end             
-              if( eop_o != '1 )
-                begin
-                  $display("Fail! Expected eop_o at end!");
+                  $display("Fail! Unexpected eop_o!");
                   $stop();
                 end
-            end   : val_end
+            end : cntr_0
+          else if( cntr == data_len - 1 )
+            begin : cntr_max
+              if( sop_o == 1 )
+                begin
+                  $display("Fail! Unexpected sop_o!");
+                  $stop();
+                end
+              if( eop_o != 1 )
+                begin
+                  $display("Fail! Expected eop_o!");
+                  $stop();
+                end
+            end   : cntr_max
+            cntr = cntr + 1'b1;
+            sorted_queue.push_back(data_o);
             @( posedge clk_i );
-        end : val_o_1
-        if( test_done )
-          begin            
-            
-            @( posedge clk_i );
-            if( val_o == 1 || eop_o == 1 || sop_o == 1 || busy_o == 1 )
+            if( cntr == data_len && busy_o == 1 )
               begin
-                $display("Fail! Unexpected flags at end!");
+                $display("Fail! Unexpected busy_o!");
                 $stop();
-              end            
-          end
+              end
+              
+        end : val_o
+        @( posedge clk_i );
+
+    end   : while_loop  
+  if( cntr < data_len ) // if busy go down early
+    begin
+      $display("Fail! Expected busy_o!");
+      $stop();
     end
-    
-    if( queue != sorted_queue )
-      begin
-        $display("%p", sorted_queue);
-        $display("Fail! Data was not sorted");
-        $stop();
-      end
-    for( int k = 0; k < queue.size(); k++ )
-      queue.delete(0);
+  if( sorted_queue != queue )
+    begin
+      $display("Fail! Sorting failed!");
+      $stop();
+    end
 endtask
 
 task automatic sort_test;
   void'($urandom(10));
-  for( int j = 0; j < 3; j++ )
+  for( int j = 0; j < 100; j++ )
     begin
       
       num_of_iter = $urandom_range(2**AWIDTH-1, 3);
       random_write( num_of_iter );
       flag_control();
     end
-  for( int i = 0; i < 100; i++ )
-    @( posedge clk_i );
  
   
 endtask
 
 initial
   begin
-    init(); // todo
+    init(); 
     fork
       clk_gen();
     join_none
@@ -282,13 +189,6 @@ initial
     $display("Starting testbench!");
     
     sort_test();
-    $display(" test - OK!");
-    
-    
-    $display(" test - OK!");
-    
-    
-    $display("test - OK!");
   
     $display("Everything is OK!");
     $stop();
