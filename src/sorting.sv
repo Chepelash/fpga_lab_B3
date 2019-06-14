@@ -28,7 +28,6 @@ ram_memory #(
   .AWIDTH   ( AWIDTH )
 ) ram_mem   (
   .clk_i    ( clk_i  ),
-  .srst_i   ( srst_i ), 
   
   .wren_i   ( val_i  ), 
   .wrpntr_i ( wrpntr ),

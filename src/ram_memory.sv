@@ -3,7 +3,6 @@ module ram_memory #(
   parameter AWIDTH = 4
 )(
   input                     clk_i,
-  input                     srst_i, 
   
   input                     wren_i,
   input        [AWIDTH-1:0] wrpntr_i,
