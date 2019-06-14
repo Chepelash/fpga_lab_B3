@@ -99,7 +99,7 @@ task automatic random_write( int num_of_iter );
   @( posedge clk_i );
 endtask
 
-task automatic flag_control;
+task automatic flag_control( string MAX );
   int data_len;
   int cntr;
   bit test_done;  
@@ -139,17 +139,46 @@ task automatic flag_control;
                   $stop();
                 end
             end   : cntr_max
+          else if( cntr < data_len - 1 )
+            begin : cntr_else
+              if( eop_o || sop_o )
+                begin
+                  $display("cntr = %d; data_len = %d", cntr, data_len);
+                  $display("Fail! eop_o or sop_o in the middle of transaction!");
+                  $stop();
+                end
+            end : cntr_else
             cntr = cntr + 1'b1;
             sorted_queue.push_back(data_o);
-            @( posedge clk_i );
-            if( cntr == data_len && busy_o == 1 )
+            
+            if( MAX == "ON" )
+              begin                
+                if( cntr < data_len )
+                  @( posedge clk_i );                                    
+                else if( cntr == data_len )
+                  break;
+              end
+            else if( MAX == "OFF" )
               begin
-                $display("Fail! Unexpected busy_o!");
+                @( posedge clk_i );
+                if( cntr == data_len && busy_o == 1 )
+                  begin
+                    $display("Fail! Unexpected busy_o!");
+                    $stop();
+                  end
+              end
+            else
+              begin
+                $display("Fail! Unexpected MAX option!");
                 $stop();
               end
+            
               
         end : val_o
-        @( posedge clk_i );
+        if( cntr < data_len )
+          @( posedge clk_i );
+        else
+          break;
 
     end   : while_loop  
   if( cntr < data_len ) // if busy go down early
@@ -165,17 +194,26 @@ task automatic flag_control;
 endtask
 
 task automatic sort_test;
-  void'($urandom(10));
+  
   for( int j = 0; j < 100; j++ )
     begin
       
       num_of_iter = $urandom_range(2**AWIDTH, 3);
       random_write( num_of_iter );
-      flag_control();
+      flag_control( "OFF" );
     end
   random_write( 2**AWIDTH );
-  flag_control();
+  flag_control( "OFF" );
   
+  $display("Starting max test");
+  for( int j = 0; j < 100; j++ )
+    begin      
+      num_of_iter = $urandom_range(2**AWIDTH, 3);
+      random_write( num_of_iter );
+      flag_control( "ON" );
+    end
+  random_write( 2**AWIDTH );
+  flag_control( "ON" );
 endtask
 
 initial
@@ -189,6 +227,7 @@ initial
     
     $display("Starting testbench!");
     
+    void'($urandom(10));
     sort_test();
   
     $display("Everything is OK!");

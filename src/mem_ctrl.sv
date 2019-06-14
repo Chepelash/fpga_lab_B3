@@ -24,8 +24,6 @@ always_ff @( posedge clk_i )
           wraddr_o <= '0;
         else if( val_i )
           wraddr_o <= wraddr_o + 1'b1;
-        else
-          wraddr_o <= wraddr_o;
       end   : workflow
   end
 
@@ -40,9 +38,7 @@ always_ff @( posedge clk_i )
         if( eop_i )
           busy_o <= '1;
         else if( clr_i )
-          busy_o <= '0;
-        else
-          busy_o <= busy_o;
+          busy_o <= '0; 
       end
   end
   
