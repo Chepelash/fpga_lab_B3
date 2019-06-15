@@ -12,6 +12,7 @@ module mem_ctrl #(
   output logic [AWIDTH-1:0] wraddr_o
 );
 
+// wraddr_o goes to ram memory
 always_ff @( posedge clk_i )
   begin
     if( srst_i )
@@ -27,6 +28,7 @@ always_ff @( posedge clk_i )
       end   : workflow
   end
 
+// busy_o control.
 always_ff @( posedge clk_i )
   begin
     if( srst_i )

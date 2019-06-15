@@ -3,7 +3,7 @@ module sorting_tb;
 parameter  int CLK_T  = 60;
 
 parameter  int DWIDTH = 8;
-parameter  int AWIDTH = 3;
+parameter  int AWIDTH = 9;
 
 
 logic              clk_i;
