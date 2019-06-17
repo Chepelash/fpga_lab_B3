@@ -1,5 +1,5 @@
 module sorting #(
-  parameter AWIDTH = 3,
+  parameter AWIDTH = 5,
   parameter DWIDTH = 8
 )(
   input                     clk_i,
@@ -45,6 +45,7 @@ mem_ctrl   #(
   .srst_i   ( srst_i ), 
   
   .val_i    ( val_i  ), 
+  .sop_i    ( sop_i  ), 
   .eop_i    ( eop_i  ),
   .clr_i    ( eop_o  ),
   

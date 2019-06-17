@@ -5,12 +5,56 @@ module mem_ctrl #(
   input                     srst_i,
   
   input                     val_i,
+  input                     sop_i,
   input                     eop_i,
   input                     clr_i,
   
   output logic              busy_o,
   output logic [AWIDTH-1:0] wraddr_o
 );
+
+logic start;
+logic fin;
+
+logic start_next;
+logic fin_next;
+
+always_ff @( posedge clk_i )
+  begin
+    if( srst_i )
+      begin
+        start <= '0;
+        fin   <= '0;
+      end
+    else
+      begin
+        if( clr_i )
+          begin
+            start <= '0;
+            fin   <= '0;
+          end
+        else
+          begin
+            start <= start_next;
+            fin   <= fin_next;
+          end
+      end
+  end
+
+always_comb
+  begin
+    start_next = start;
+    fin_next   = fin;
+    if( clr_i )
+      begin
+        start_next = 0;
+        fin_next   = 0;
+      end
+    if( val_i && sop_i )
+      start_next = 1;
+    else if( val_i && eop_i )
+      fin_next = 1;    
+  end
 
 // wraddr_o goes to ram memory
 always_ff @( posedge clk_i )
@@ -23,7 +67,7 @@ always_ff @( posedge clk_i )
       begin : workflow
         if( clr_i )
           wraddr_o <= '0;
-        else if( val_i )
+        else if( start_next && !fin )
           wraddr_o <= wraddr_o + 1'b1;
       end   : workflow
   end
@@ -37,7 +81,7 @@ always_ff @( posedge clk_i )
       end
     else
       begin
-        if( eop_i )
+        if( fin_next )
           busy_o <= '1;
         else if( clr_i )
           busy_o <= '0; 
