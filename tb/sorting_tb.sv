@@ -1,10 +1,10 @@
 module sorting_tb;
 
-parameter  int CLK_T  = 60;
+parameter  int CLK_T    = 60;
 
-parameter  int DWIDTH = 8;
-parameter  int AWIDTH = 9;
-
+parameter  int DWIDTH   = 32;
+parameter  int AWIDTH   = 12;
+parameter  int ITER_NUM = 1;
 
 logic              clk_i;
 logic              srst_i;
@@ -74,7 +74,7 @@ endtask
 
 
 bit [DWIDTH-1:0] rand_data;
-int queue[$];
+bit [DWIDTH-1:0] queue[$];
 int num_of_iter;
 
 task automatic random_write( int num_of_iter );
@@ -103,7 +103,7 @@ task automatic flag_control( string MAX );
   int data_len;
   int cntr;
   bit test_done;  
-  int sorted_queue[$];
+  bit [DWIDTH-1:0] sorted_queue[$];
   
   data_len  = queue.size();
   queue.sort();
@@ -189,13 +189,14 @@ task automatic flag_control( string MAX );
   if( sorted_queue != queue )
     begin
       $display("Fail! Sorting failed!");
+      $display("sorted_queue = %p; queue = %p", sorted_queue, queue);
       $stop();
     end
 endtask
 
 task automatic sort_test;
   
-  for( int j = 0; j < 100; j++ )
+  for( int j = 0; j < ITER_NUM; j++ )
     begin
       
       num_of_iter = $urandom_range(2**AWIDTH, 3);
@@ -206,7 +207,8 @@ task automatic sort_test;
   flag_control( "OFF" );
   
   $display("Starting max test");
-  for( int j = 0; j < 100; j++ )
+
+  for( int j = 0; j < ITER_NUM; j++ )
     begin      
       num_of_iter = $urandom_range(2**AWIDTH, 3);
       random_write( num_of_iter );
